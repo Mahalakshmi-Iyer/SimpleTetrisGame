@@ -13,6 +13,8 @@ public class Mino {
 	public int direction = 1; // There are 4 directions (1/2/3/4)
 	boolean leftCollision, rightCollision, bottomCollision;
 	public boolean active = true;
+	public boolean deactivating;
+	int deactivateCounter = 0;
 	
 	public void create(Color c) {
 		b[0] = new Block(c);
@@ -54,6 +56,9 @@ public class Mino {
 		rightCollision = false;
 		bottomCollision = false;
 		
+		// check static block collision
+		checkStaticBlockCollision();
+		
 		// check frame collision
 		
 		// left wall
@@ -82,6 +87,9 @@ public class Mino {
 		rightCollision = false;
 		bottomCollision = false;
 		
+		// check static block collision
+		checkStaticBlockCollision();
+		
 		// check frame collision
 		
 		// left wall
@@ -106,7 +114,38 @@ public class Mino {
 		}
 	}
 	
+	private void checkStaticBlockCollision() {
+		for(int i=0; i<PlayManager.staticBlocks.size(); i++) {
+			int targetX = PlayManager.staticBlocks.get(i).x;
+			int targetY = PlayManager.staticBlocks.get(i).y;
+			
+			// check down
+			for(int ii = 0; ii<b.length; ii++) {
+				if(b[ii].y + Block.SIZE == targetY && b[ii].x == targetX ) {
+					bottomCollision = true;
+				}
+			}
+			
+			// check left
+			for(int ii = 0; ii<b.length; ii++) {
+				if(b[ii].x - Block.SIZE == targetX && b[ii].y == targetY ) {
+					leftCollision = true;
+				}
+			}
+			
+			// check right
+			for(int ii = 0; ii<b.length; ii++) {
+				if(b[ii].x + Block.SIZE == targetX && b[ii].y == targetY ) {
+					rightCollision = true;
+				}
+			}
+		}
+	}
+	
 	public void update() {
+		
+		if(deactivating)
+			deactivating();
 		
 		// move the mino
 		if(KeyHandler.upPressed) {
@@ -159,7 +198,7 @@ public class Mino {
 		}
 		
 		if(bottomCollision) {
-			active = false;
+			deactivating = true;
 		}
 		else {
 			autoDropCounter++;	// the counter increases in every frame
@@ -170,6 +209,21 @@ public class Mino {
 				b[2].y += Block.SIZE;
 				b[3].y += Block.SIZE;
 				autoDropCounter = 0;
+			}
+		}
+	}
+	
+	private void deactivating() {
+		deactivateCounter++;
+		
+		// wait for 45 frames
+		if(deactivateCounter == 45) {
+			deactivateCounter = 0;
+			checkMovementCollision(); // check if the bottom is still hitting
+			
+			// if the bottom is still hitting after 45 frames, deactivate the mino
+			if(bottomCollision) {
+				active = false;
 			}
 		}
 	}
